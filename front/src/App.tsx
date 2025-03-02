@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './App.css';
 import TicketsList from './components/TicketsList';
 import MenuSort from './components/MenuSort';
 import styled from 'styled-components';
@@ -7,13 +6,19 @@ import { CheckboxValueType } from 'antd/es/checkbox/Group';
 
 const Wrapper = styled.div`
   display: flex;
-  gap:10px;
+  gap:5%;
   justify-content: center;
-  padding-top: 10%;
+  overflow: hidden;
   min-height: 100vh;
+  padding-top: 10%;
   width:100%;
   height:100%;
-  background-color: #b4adad5b;
+  background-color: #dedede5b;
+  @media (max-width:768px) {
+    flex-direction: column;
+    padding-top: 0;
+    gap:15px;
+  }
 `
 
 function App() {

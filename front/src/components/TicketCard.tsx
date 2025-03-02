@@ -5,6 +5,7 @@ import styled from 'styled-components'
 import { formatPrice } from '../utils/formatPrice'
 import { signs } from '../consts/menu'
 import { ITicket } from '../consts/dataType'
+import React from 'react'
 
 interface IProps{
     data:ITicket
@@ -15,6 +16,10 @@ const Wrapper = styled.div`
     background-color: #fff;
     display: flex;
     border-radius: 10px;
+
+    @media (max-width:768px) {
+        flex-direction: column;
+    }
 `
 
 const LeftSide = styled.div`
@@ -27,7 +32,16 @@ const LeftSide = styled.div`
         background-color: #f47403;
         padding: 12px 24px;
         border-radius: 5px;
+        cursor:pointer;
+    }
 
+    @media (max-width:768px) {
+        padding:6px;
+        align-items:center;
+        button{
+            text-wrap:nowrap;
+            padding:8px 14px;
+        }
     }
 `
 
@@ -35,6 +49,10 @@ const RightSide = styled.div`
     display: flex;
     padding:20px;
     gap: 10px;
+    @media (max-width:768px) {
+        padding:6px;
+        justify-content:center;
+    }
 `
 
 const Departure = styled.div`
@@ -51,13 +69,23 @@ const Center = styled.div`
 `
 const Time = styled.div`
     font-size: 44px;
+
+    @media (max-width:768px) {
+        font-size: 24px;
+    }
 `
 const Place = styled.div`
     font-size: 15px;
+        @media (max-width:768px) {
+        font-size: 13px;
+    }
 `
 const Date = styled.div`
     font-size: 14px;
     font-weight: 300;
+    @media (max-width:768px) {
+        font-size: 13px;
+    }
 `
 const Line = styled.div`
     display: flex;
@@ -66,6 +94,9 @@ const Line = styled.div`
         height: 1px;
         min-width:80px;
         background: black;
+        @media (max-width:768px) {
+            min-width:20px;
+        }
     }
     svg{
         margin-top: 5px;

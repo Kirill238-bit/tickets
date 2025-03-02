@@ -3,11 +3,16 @@ import TicketCard from './TicketCard';
 import styled from 'styled-components';
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { ITicket } from '../consts/dataType';
+import React from 'react';
 
 const Wrapper = styled.div`
       display: flex;
       flex-direction: column;
       gap:18px;
+
+      @media (max-width:768px) {
+        padding: 0 16px 16px 16px;
+      }
 `
 
 const TicketsList = ({checkedList,activeCurrencies}:{checkedList:CheckboxValueType[],activeCurrencies:number}) =>{

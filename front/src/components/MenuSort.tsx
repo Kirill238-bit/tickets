@@ -3,6 +3,7 @@ import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { FC, useState } from 'react';
 import styled from 'styled-components';
 import { currency, plainOptions } from '../consts/menu';
+import React from 'react';
 
 interface IProps{
     checkedList: CheckboxValueType[]
@@ -19,10 +20,15 @@ const Wrapper = styled.div`
     display:block;
     width:13%;
     padding:15px;
-    height:13%;
+    max-height: 250px;
     background-color: #fff;
-    box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.25);
+    //box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
     border-radius: 15px;
+
+    @media (max-width:768px) {
+        width:auto;
+        margin: 16px 16px 0 16px;
+    }
 `
 
 const Currencies = styled.div`
