@@ -1,6 +1,6 @@
-import { Checkbox, CheckboxProps } from 'antd';
+import { Checkbox, CheckboxProps } from 'antd';//@ts-ignore
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
-import { FC, useState } from 'react';
+import { FC } from 'react';
 import styled from 'styled-components';
 import { currency, plainOptions } from '../consts/menu';
 import React from 'react';
@@ -20,9 +20,8 @@ const Wrapper = styled.div`
     display:block;
     width:13%;
     padding:15px;
-    max-height: 250px;
+    max-height: 300px;
     background-color: #fff;
-    //box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
     border-radius: 15px;
 
     @media (max-width:768px) {
@@ -58,13 +57,10 @@ const MenuSort:FC<IProps> = ({checkedList, setCheckedList,activeCurrencies,setAc
     const checkAll = plainOptions.length === checkedList.length;
     const indeterminate = checkedList.length > 0 && checkedList.length < plainOptions.length;
 
-    const onChange = (list: CheckboxValueType[]) => {
-        setCheckedList(list);
-    };
+    const onChange = (list: CheckboxValueType[]) => setCheckedList(list);
 
-    const onCheckAllChange: CheckboxProps['onChange'] = (e) => {
-        setCheckedList(e.target.checked ? plainOptions.map((item)=> item.value) : []);
-    };
+    const onCheckAllChange: CheckboxProps['onChange'] = (e) => setCheckedList(e.target.checked ? plainOptions.map((item)=> item.value) : []);
+    
 
   return (
     <Wrapper>
@@ -73,7 +69,7 @@ const MenuSort:FC<IProps> = ({checkedList, setCheckedList,activeCurrencies,setAc
             <Currencies>
                 {currency.map((item,index)=>{
                     return (
-                        <Item active={Boolean(index === activeCurrencies)} onClick={()=>setActiveCurrencies(index)}>{item}</Item>
+                        <Item active={Boolean(index+1 === activeCurrencies)} onClick={()=>setActiveCurrencies(index+1)}>{item}</Item>
                 )})}
             </Currencies>
         </div>

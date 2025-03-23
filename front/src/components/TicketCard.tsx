@@ -6,6 +6,7 @@ import { formatPrice } from '../utils/formatPrice'
 import { signs } from '../consts/menu'
 import { ITicket } from '../consts/dataType'
 import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface IProps{
     data:ITicket
@@ -29,10 +30,14 @@ const LeftSide = styled.div`
     padding:20px;
     button{
         border: none;
+        color:#fff;
         background-color: #f47403;
-        padding: 12px 24px;
-        border-radius: 5px;
+        padding: 15px 30px;
+        border-radius: 12px;
         cursor:pointer;
+        font-size: 15px;
+        line-height: 19px;
+        font-weight: 600;
     }
 
     @media (max-width:768px) {
@@ -105,6 +110,7 @@ const Line = styled.div`
 `
 
 const TicketCard:FC<IProps> = ({data,activeCurrencies}) => {
+    const navigate = useNavigate();
   return (
     <Wrapper>
         <LeftSide>
@@ -113,7 +119,7 @@ const TicketCard:FC<IProps> = ({data,activeCurrencies}) => {
                 alt='логотип компании'
                 width='120px'
             />
-            <button>Купить за {formatPrice(data.price)} {signs.filter((item:any,index:number)=> activeCurrencies === index )}</button>
+            <button onClick={()=>{navigate(`/TicketPage/${data.id}?currency=${activeCurrencies}`)}}>Купить за {formatPrice(data.price)} {signs.filter((item:any,index:number)=> activeCurrencies === index+1 )}</button>
         </LeftSide>
         <RightSide>
             <Departure>

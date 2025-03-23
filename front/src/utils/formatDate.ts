@@ -1,5 +1,5 @@
 export function formatDate(dateString:string) {
-    const [day, month, year] = dateString.split(".");
+    const [year, month, day] = dateString.split("-");
 
     const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
 
@@ -7,5 +7,5 @@ export function formatDate(dateString:string) {
 
     const monthName = date.toLocaleDateString("ru-RU", { month: "long" });
   
-    return `${day} ${monthName} 20${year}, ${dayOfWeek}`
+    return `${day} ${monthName} ${year}, ${dayOfWeek}`
   }

@@ -1,4 +1,5 @@
 export type ITicket={
+    id:string
     origin: string
     origin_name:string
     destination:string

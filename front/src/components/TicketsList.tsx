@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import TicketCard from './TicketCard';
-import styled from 'styled-components';
+import styled from 'styled-components';//@ts-ignore
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { ITicket } from '../consts/dataType';
 import React from 'react';
+import { defaultPath } from '../App';
 
 const Wrapper = styled.div`
       display: flex;
@@ -15,28 +16,33 @@ const Wrapper = styled.div`
       }
 `
 
-const TicketsList = ({checkedList,activeCurrencies}:{checkedList:CheckboxValueType[],activeCurrencies:number}) =>{
+type IProps = {
+  checkedList:CheckboxValueType[],
+  activeCurrencies:number
+}
+
+const TicketsList = ({checkedList,activeCurrencies}:IProps) =>{
     const [data, setData] = useState<ITicket[]>([]);
 
-  useEffect(() => {
-    fetch('tickets.json')
-      .then(response => response.json())
-      .then(data => setData(data.tickets))
-      .catch(error => console.error(error));
-  }, []);
+    useEffect(() => {
+      const params = new URLSearchParams();
+      if (checkedList.length > 0) {
+        params.append('transfers', checkedList.join(';'));
+      }
+      if (activeCurrencies !== undefined) {
+        params.append('currency', activeCurrencies.toString());
+      }
+  
+      const filter = params.toString() ? `?${params.toString()}` : '';
+      fetch(`${defaultPath}tickets${filter}`)
+        .then(response => response.json())
+        .then(data => setData(data.tickets))
+        .catch(error => console.error(error));
+    }, [activeCurrencies, checkedList]);
 
   return (
     <Wrapper>
-      {!checkedList.length && data.map((item)=>{
-          return (
-            <TicketCard data={item} activeCurrencies={activeCurrencies}/>
-          )
-      })}
-        {data.filter((item)=> checkedList.includes(item.stops)).map((item)=>{
-            return (
-                <TicketCard data={item} activeCurrencies={activeCurrencies}/>
-            )
-        })}
+      {data.map((item)=> <TicketCard data={item} activeCurrencies={activeCurrencies}/>)}
     </Wrapper>
   )
 }

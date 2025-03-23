@@ -1,86 +1,135 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bodyParser = require('body-parser');
+const cors = require('cors');
+const convertCurrency = require('./convertCurrency');
 
 const app = express();
-const port = 3000;
+const port = 7070; 
 
-// Middleware
-app.use(bodyParser.json());
 
-// Connect to SQLite database
-const db = new sqlite3.Database(':memory:');
+app.use(cors());
+app.use(express.json());
+app.use(express.static('../front/build'));
 
-// Create tickets table
-db.serialize(() => {
-    db.run(`CREATE TABLE tickets (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        origin TEXT,
-        origin_name TEXT,
-        destination TEXT,
-        destination_name TEXT,
-        departure_date TEXT,
-        departure_time TEXT,
-        arrival_date TEXT,
-        arrival_time TEXT,
-        carrier TEXT,
-        stops INTEGER,
-        price INTEGER,
-        booked BOOLEAN DEFAULT 0
-    )`);
-
-    // Insert sample data
-    const tickets = require('../front/public/tickets.json').tickets;
-    const stmt = db.prepare(`INSERT INTO tickets (
-        origin, origin_name, destination, destination_name, 
-        departure_date, departure_time, arrival_date, arrival_time, 
-        carrier, stops, price
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    
-    tickets.forEach(ticket => {
-        stmt.run(
-            ticket.origin, ticket.origin_name, ticket.destination, ticket.destination_name,
-            ticket.departure_date, ticket.departure_time, ticket.arrival_date, ticket.arrival_time,
-            ticket.carrier, ticket.stops, ticket.price
-        );
-    });
-    stmt.finalize();
+const db = new sqlite3.Database('db.sqlite', (err) => {
+  if (err) {
+    console.error('Ошибка подключения к базе данных:', err.message);
+  } else {
+    console.log('Подключено к базе данных SQLite.');
+  }
 });
 
+app.get('/', (req, res) => {
+  res.sendFile('index.html');
+});
+
+
 // Get all tickets
-app.get('/tickets', (req, res) => {
-    db.all('SELECT * FROM tickets', [], (err, rows) => {
+app.get('/api/tickets', (req, res) => {
+    const { transfers, currency } = req.query;
+    console.log('Currency parameter:', currency);
+    let query = 'SELECT * FROM tickets';
+    const params = [];
+
+    if (transfers !== undefined) {
+        const transferValues = transfers.split(';').map(Number);
+        const placeholders = transferValues.map(() => '?').join(',');
+        query += ` WHERE stops IN (${placeholders})`;
+        params.push(...transferValues);
+    }
+
+    db.all(query, params, (err, rows) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
         }
+
+        if (currency) {
+            rows = rows.map(ticket => {
+                ticket.price = convertCurrency(ticket.price, currency);
+                return ticket;
+            });
+        }
+
         res.json({ tickets: rows });
     });
 });
 
 // Get ticket by ID
-app.get('/tickets/:id', (req, res) => {
+app.get('/api/tickets/:id', (req, res) => {
     const id = req.params.id;
+    const { currency } = req.query;
     db.get('SELECT * FROM tickets WHERE id = ?', [id], (err, row) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
         }
+
+        if (currency) {
+            row.price = convertCurrency(row.price, currency);
+        }
+
         res.json(row);
     });
 });
 
 // Book a ticket
-app.post('/tickets/:id/book', (req, res) => {
-    const id = req.params.id;
-    db.run('UPDATE tickets SET booked = 1 WHERE id = ?', [id], function(err) {
+app.post('/api/tickets/book', (req, res) => {
+    const { email, ticketId,username } = req.body;
+
+    db.get('SELECT id FROM users WHERE email = ?', [email], (err, user) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return;
         }
-        res.json({ message: `Ticket ${id} booked successfully` });
+
+        const userId = user ? user.id : null;
+
+        const bookTicket = (userId) => {
+            db.run('INSERT INTO bookings (user_id, ticket_id) VALUES (?, ?)', [userId, ticketId], function(err) {
+                if (err) {
+                    res.status(400).json({ error: 'Этот пользователь уже забронировали этот билет' });
+                    return;
+                }
+                res.json({ message: `Билет ${ticketId} успешно забронирован ${email}` });
+            });
+        };
+
+        if (userId) {
+            bookTicket(userId);
+        } else {
+            db.run('INSERT INTO users (email, username) VALUES (?, ?)', [email, username], function(err) {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                bookTicket(this.lastID);
+            });
+        }
     });
 });
+
+// Canceling a booking
+app.post('/api/tickets/cancel', (req, res) => {
+    const { email, ticketId } = req.body;
+
+    db.get('SELECT id FROM users WHERE email = ?', [email], (err, user) => {
+        if (err || !user) {
+            res.status(400).json({ error: 'User not found' });
+            return;
+        }
+
+        db.run('DELETE FROM bookings WHERE user_id = ? AND ticket_id = ?', [user.id, ticketId], function(err) {
+            if (err || this.changes === 0) {
+                res.status(400).json({ error: 'Booking not found or already canceled' });
+                return;
+            }
+            res.json({ message: `Booking for ticket ${ticketId} canceled successfully for user ${email}` });
+        });
+    });
+});
+
 
 // Start server
 app.listen(port, () => {

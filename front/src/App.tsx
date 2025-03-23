@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
-import TicketsList from './components/TicketsList';
-import MenuSort from './components/MenuSort';
+import React from 'react';
 import styled from 'styled-components';
-import { CheckboxValueType } from 'antd/es/checkbox/Group';
+import AppRouter from './components/AppRouter';
+import { ConfigProvider } from 'antd';
 
 const Wrapper = styled.div`
-  display: flex;
+ /* display: flex;
   gap:5%;
   justify-content: center;
   overflow: hidden;
@@ -18,18 +17,20 @@ const Wrapper = styled.div`
     flex-direction: column;
     padding-top: 0;
     gap:15px;
-  }
+  }*/
 `
 
-function App() {
-  const [checkedList, setCheckedList] = useState<CheckboxValueType[]>([]);
-  const [activeCurrencies,setActiveCurrencies] = useState<number>(0);
+export const defaultPath = 'http://localhost:7070/api/'
 
+function App() {
   return (
+    <ConfigProvider
+      theme={{ token: {colorPrimary: `#f47403`} }}
+    >
       <Wrapper>
-        <MenuSort checkedList={checkedList} setCheckedList={setCheckedList} activeCurrencies={activeCurrencies} setActiveCurrencies ={setActiveCurrencies}/>
-        <TicketsList checkedList={checkedList} activeCurrencies={activeCurrencies}/>
+        <AppRouter/>
       </Wrapper>
+      </ConfigProvider>
   );
 }
 
