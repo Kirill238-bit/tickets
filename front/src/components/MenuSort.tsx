@@ -1,15 +1,15 @@
 import { Checkbox, CheckboxProps } from 'antd';//@ts-ignore
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
-import { FC } from 'react';
+import { Dispatch, FC, SetStateAction } from 'react';
 import styled from 'styled-components';
 import { currency, plainOptions } from '../consts/menu';
 import React from 'react';
 
 interface IProps{
     checkedList: CheckboxValueType[]
-    setCheckedList: React.Dispatch<React.SetStateAction<CheckboxValueType[]>>
+    setCheckedList: Dispatch<SetStateAction<CheckboxValueType[]>>
     activeCurrencies: number
-    setActiveCurrencies: React.Dispatch<React.SetStateAction<number>>
+    setActiveCurrencies: Dispatch<SetStateAction<number>>
 }
 
 const CheckboxGroup = Checkbox.Group;
@@ -31,15 +31,15 @@ const Wrapper = styled.div`
 `
 
 const Currencies = styled.div`
-    border: 1px solid #1256e8;
+    border: 1px solid #f47403;
     border-radius: 5px;
     display: flex;
     justify-content: space-between;
 `
 
 const Item = styled.div<{active:boolean}>`
-    color:${props => props.active ? '#fff' : '#3c7bf7' };
-    background-color: ${props => props.active ? '#3c7bf7' : '#fff' };
+    color:${props => props.active ? '#fff' : '#f47403' };
+    background-color: ${props => props.active ? '#f47403' : '#fff' };
     transition: 0.5s;
     width:100%;
     padding:8px;
@@ -47,8 +47,8 @@ const Item = styled.div<{active:boolean}>`
     cursor: pointer;
 
     &:hover {
-        background-color: #cfe2ff;
-        color: #3c7bf7;
+        background-color: #ffa455;
+        color: #fff;
     }
 
 `

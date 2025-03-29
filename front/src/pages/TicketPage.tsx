@@ -13,17 +13,16 @@ const Wrapper = styled.div`
   display: flex;
   justify-content: space-between;
   gap:5%;
-  height:100%;
-  margin: 15%;
+  height:100vh;
   background-color: #dedede5b;
-  padding:15px 45px;
+  padding:45px 15%;
   border-radius: 12px;
 `
 const Left = styled.div`
   display: flex;
   flex-direction: column;
   gap:8px;
-
+  width: 50%;
   h2{
     font-size: 17px;
     line-height: 22px;
@@ -35,7 +34,7 @@ const Right = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 30%;
-  height:30%;
+  height:6%;
   background-color: #fff;
   border-radius:8px;
   padding:15px 30px;
@@ -162,15 +161,18 @@ const TicketPage = () => {
             
         
             await response.json();
-            setResult({bool:true,status:''})
-            setTimeout(()=>setOrderModal(false),1000)
+            setResult({bool:true,status:''});
+            setTimeout(()=>{
+              setResult({bool:null,status:''});
+              setOrderModal(false);
+            },1000);
           } catch (error:any) {
-            setIsShaking(true)
+            setIsShaking(true);
             console.log('Error:', error);
-            setResult({bool:false,status:error.toString()})
-            setTimeout(()=>setIsShaking(false),500)
+            setResult({bool:false,status:error.toString()});
+            setTimeout(()=>setIsShaking(false),500);
           }
-          setIsLoading(false)
+          setIsLoading(false);
     }
 
     const close = () =>{
@@ -202,12 +204,19 @@ const TicketPage = () => {
           Количеств пересадок: {data.stops}
         </CardWrapper>
         <br/><br/>
-        <CardWrapper>
-          <WarningOutlined style={{color : '#faad14',fontSize:'20px'}} /> На дешевом тарифе надо доехать до другого аэропорта
-        </CardWrapper>
-        <CardWrapper>
-        <InfoCircleOutlined  style={{color : '#1677ff',fontSize:'20px'}} /> На дешевом тарифе будет повторная регистрация
-        </CardWrapper>
+        {data.stops ? 
+        <>
+          <CardWrapper>
+            <WarningOutlined style={{color : '#faad14',fontSize:'20px'}} /> На дешевом тарифе нужно доехать до другого аэропорта
+          </CardWrapper>
+          <CardWrapper>
+            <InfoCircleOutlined  style={{color : '#1677ff',fontSize:'20px'}} /> На дешевом тарифе будет повторная регистрация
+          </CardWrapper>
+        </>
+        :
+        <>
+        </>
+        }
         <h2>{data.origin_name} - {data.destination_name}</h2>
         <CardWrapper>
           <div className='item'>

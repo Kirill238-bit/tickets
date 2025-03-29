@@ -27,8 +27,7 @@ app.get('/', (req, res) => {
 
 // Get all tickets
 app.get('/api/tickets', (req, res) => {
-    const { transfers, currency } = req.query;
-    console.log('Currency parameter:', currency);
+    const { transfers, currency, departure, arrive, date_from } = req.query;
     let query = 'SELECT * FROM tickets';
     const params = [];
 
@@ -37,6 +36,12 @@ app.get('/api/tickets', (req, res) => {
         const placeholders = transferValues.map(() => '?').join(',');
         query += ` WHERE stops IN (${placeholders})`;
         params.push(...transferValues);
+    }
+    if (departure && arrive && date_from) {
+        //const formattedDate = new Date(date_from).toISOString().split('T')[0]; // Ensure date is in YYYY-MM-DD format
+        query += transfers !== undefined ? ' AND' : ' WHERE';
+        query += ' LOWER(origin_name) = LOWER(?) AND LOWER(destination_name) = LOWER(?) AND departure_date = ?';
+        params.push(decodeURIComponent(departure), decodeURIComponent(arrive), date_from);
     }
 
     db.all(query, params, (err, rows) => {
@@ -89,7 +94,7 @@ app.post('/api/tickets/book', (req, res) => {
         const bookTicket = (userId) => {
             db.run('INSERT INTO bookings (user_id, ticket_id) VALUES (?, ?)', [userId, ticketId], function(err) {
                 if (err) {
-                    res.status(400).json({ error: 'Этот пользователь уже забронировали этот билет' });
+                    res.status(400).json({ error: 'Этот пользователь уже забронировал этот билет' });
                     return;
                 }
                 res.json({ message: `Билет ${ticketId} успешно забронирован ${email}` });
