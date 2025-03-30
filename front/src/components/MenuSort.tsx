@@ -8,8 +8,6 @@ import React from 'react';
 interface IProps{
     checkedList: CheckboxValueType[]
     setCheckedList: Dispatch<SetStateAction<CheckboxValueType[]>>
-    activeCurrencies: number
-    setActiveCurrencies: Dispatch<SetStateAction<number>>
 }
 
 const CheckboxGroup = Checkbox.Group;
@@ -20,7 +18,7 @@ const Wrapper = styled.div`
     display:block;
     width:13%;
     padding:15px;
-    max-height: 300px;
+    max-height: 200px;
     background-color: #fff;
     border-radius: 15px;
 
@@ -52,7 +50,7 @@ const Item = styled.div<{active:boolean}>`
     }
 
 `
-const MenuSort:FC<IProps> = ({checkedList, setCheckedList,activeCurrencies,setActiveCurrencies}) => {
+const MenuSort:FC<IProps> = ({checkedList, setCheckedList}) => {
 
     const checkAll = plainOptions.length === checkedList.length;
     const indeterminate = checkedList.length > 0 && checkedList.length < plainOptions.length;
@@ -64,7 +62,7 @@ const MenuSort:FC<IProps> = ({checkedList, setCheckedList,activeCurrencies,setAc
 
   return (
     <Wrapper>
-        <div>
+       {/*} <div>
             <Title>Валюта</Title>
             <Currencies>
                 {currency.map((item,index)=>{
@@ -72,7 +70,7 @@ const MenuSort:FC<IProps> = ({checkedList, setCheckedList,activeCurrencies,setAc
                         <Item active={Boolean(index+1 === activeCurrencies)} onClick={()=>setActiveCurrencies(index+1)}>{item}</Item>
                 )})}
             </Currencies>
-        </div>
+        </div>*/}
         <div>
             <Title>Количество пересадок</Title>
             <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll}>

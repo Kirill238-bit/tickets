@@ -9,8 +9,9 @@ import MenuSearch from 'components/MenuSearch';
 const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
-  padding-top: 2%;
+  padding: 2% 0;
   background-color: #dedede5b;
+  
   h1{
     font-size: 44px;
     font-weight: 700;
@@ -35,7 +36,6 @@ const MainWrapper = styled.div`
 `
 const ListPage = () => {
       const [checkedList, setCheckedList] = useState<CheckboxValueType[]>([]);
-      const [activeCurrencies,setActiveCurrencies] = useState<number>(1);
       const [departure,setDeparture] = useState('');
       const [arrive,setArrive] = useState('');
       const [date,setDate] = useState('');
@@ -55,12 +55,9 @@ const ListPage = () => {
           <MenuSort 
             checkedList={checkedList} 
             setCheckedList={setCheckedList} 
-            activeCurrencies={activeCurrencies} 
-            setActiveCurrencies={setActiveCurrencies}
           />
           <TicketsList 
             checkedList={checkedList} 
-            activeCurrencies={activeCurrencies}
             departure={departure}
             arrive={arrive}
             date={date}

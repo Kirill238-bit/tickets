@@ -1,7 +1,6 @@
-import React, { Dispatch, FC, SetStateAction } from 'react'
+import { Dispatch, FC, SetStateAction } from 'react'
 import styled from 'styled-components'
 import { DatePicker, Input } from 'antd';
-import dayjs from 'dayjs';
 
 interface IProps {
     departure: string;
@@ -33,7 +32,6 @@ const MenuSearch:FC<IProps> = ({
             setDate('')
             return
         }
-        console.log(data)
         const month = data.$M < 10 ? '0' + (data.$M+1) :data.$M+1
         const day = data.$D < 10 ? '0' + data.$D :data.$D
         let dataFrom = `${data.$y}-${month}-${day}`

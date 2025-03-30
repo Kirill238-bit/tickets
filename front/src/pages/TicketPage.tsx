@@ -49,6 +49,10 @@ const Right = styled.div`
     font-size: 15px;
     line-height: 19px;
     font-weight: 600;
+    &:hover {
+      background-color: #ffa455;
+      transition: 0ms.5;
+    }
   }
   h3{
     font-size: 19px;
@@ -130,7 +134,7 @@ const TicketPage = () => {
   const [isShaking,setIsShaking] = useState(false)
 
   useEffect(() => {
-        fetch(`${defaultPath}tickets/${id}?currency=${params.get('currency')}`)
+        fetch(`${defaultPath}tickets/${id}`)
           .then(response => response.json())
           .then(data => setData(data))
           .catch(error => console.error(error));

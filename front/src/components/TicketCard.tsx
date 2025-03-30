@@ -1,33 +1,47 @@
-import { FC } from 'react'
+import { FC, useContext, useEffect, useState } from 'react'
 import { formatDate } from '../utils/formatDate'
 import { formatStops } from '../utils/formatStops'
 import styled from 'styled-components'
 import { formatPrice } from '../utils/formatPrice'
 import { signs } from '../consts/menu'
 import { ITicket } from '../consts/dataType'
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import OrderModal from './OrderModal'
+import { Modal } from 'antd'
+import { defaultPath } from 'App'
+import { Context } from './Context'
 
 interface IProps{
-    data:ITicket
-    activeCurrencies:number
+    data:ITicket,
+    cart:boolean
 }
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{active:boolean}>`
     background-color: #fff;
+    position: relative;
     display: flex;
     border-radius: 10px;
-
+    justify-content: center;
     @media (max-width:768px) {
         flex-direction: column;
+    }
+
+    .heart_icon:before{
+        display: inline-block;
+        position:absolute;
+        cursor:pointer;
+        top:0;
+        right:0;
+        transform: translate3d(-10px, 10px, 0);
+        width:30px;
+        height:30px;
+        content: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3e%3cpath d='M20.16,5A6.29,6.29,0,0,0,12,4.36a6.27,6.27,0,0,0-8.16,9.48l6.21,6.22a2.78,2.78,0,0,0,3.9,0l6.21-6.22A6.27,6.27,0,0,0,20.16,5Zm-1.41,7.46-6.21,6.21a.76.76,0,0,1-1.08,0L5.25,12.43a4.29,4.29,0,0,1,0-6,4.27,4.27,0,0,1,6,0,1,1,0,0,0,1.42,0,4.27,4.27,0,0,1,6,0A4.29,4.29,0,0,1,18.75,12.43Z' fill='%23${props => !props.active ? '000000' : 'f47403'}'/%3e%3c/svg%3e");
     }
 `
 
 const LeftSide = styled.div`
     display: flex;
     flex-direction: column;
-    border-right: 0.5px solid #c6c3c3;
-    padding:20px;
+    padding:5px 20px 5px 0;
     button{
         border: none;
         color:#fff;
@@ -38,6 +52,10 @@ const LeftSide = styled.div`
         font-size: 15px;
         line-height: 19px;
         font-weight: 600;
+        &:hover {
+            background-color: #ffa455;
+            transition: 0ms.5;
+        }
     }
 
     @media (max-width:768px) {
@@ -52,7 +70,9 @@ const LeftSide = styled.div`
 
 const RightSide = styled.div`
     display: flex;
-    padding:20px;
+    justify-content: center;
+    align-items: center;
+    padding:20px 10px;
     gap: 10px;
     @media (max-width:768px) {
         padding:6px;
@@ -71,9 +91,10 @@ const Center = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 `
 const Time = styled.div`
-    font-size: 44px;
+    font-size: 24px;
 
     @media (max-width:768px) {
         font-size: 24px;
@@ -85,7 +106,7 @@ const Place = styled.div`
         font-size: 13px;
     }
 `
-const Date = styled.div`
+const Datee = styled.div`
     font-size: 14px;
     font-weight: 300;
     @media (max-width:768px) {
@@ -103,44 +124,160 @@ const Line = styled.div`
             min-width:20px;
         }
     }
-    svg{
+    span{
         margin-top: 5px;
         height: 20px;
     }
 `
 
-const TicketCard:FC<IProps> = ({data,activeCurrencies}) => {
-    const navigate = useNavigate();
+const TicketCard:FC<IProps> = ({data,cart}) => {
+      const [orderModal,setOrderModal] = useState(false)
+      const [name,setName] = useState('')
+      const [email,setEmail] =useState('')
+      const [result,setResult] = useState<{bool:null | boolean,status:null | string}>({bool:null,status:null})
+      const [isLoading,setIsLoading] = useState(false)
+      const [isShaking,setIsShaking] = useState(false)
+      const {setBookedLength,bookedMas,setBookedMass} = useContext(Context)
+      const [timeLeft, setTimeLeft] = useState<number | null>(null);
+      
+      useEffect(() => {
+        const timerId = setInterval(() => {
+            const startTime = localStorage.getItem(`timer-${data.id}`);
+            if (startTime) {
+                const elapsed = Date.now() - parseInt(startTime, 10);
+                const remaining = 15 * 60 * 1000 - elapsed;
+                if (remaining <= 0) {
+                    setBookedMass((prev:any) => {
+                        const updatedBookedMas = prev.filter((ticket: any) => ticket.id !== data.id);
+                        localStorage.setItem('bookedMas', JSON.stringify(updatedBookedMas));
+                        return updatedBookedMas;
+                    });
+                    localStorage.removeItem(`timer-${data.id}`);
+                    setTimeLeft(null);
+                } else {
+                    setTimeLeft(remaining);
+                }
+            }
+        }, 1000);
+
+        return () => clearInterval(timerId);
+    }, [data.id, setBookedMass]);
+
+          const save = async() => {
+            setIsLoading(true)
+            const body = {
+                email:email,
+                ticketId:data.id,
+                username:name
+            }
+            try {
+              if(!email || !name) throw new Error('Вы не заполнили поля')
+              
+                const response = await fetch(`${defaultPath}tickets/book`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(body),
+                });
+    
+                if (!response.ok) {
+                  const errorText = await response.text();
+                  throw new Error(`${JSON.parse(errorText).error}`);
+                }
+                
+            
+                await response.json();
+                setResult({bool:true,status:''});
+                setTimeout(()=>{
+                  setResult({bool:null,status:''});
+                  setOrderModal(false);
+                },1000);
+              } catch (error:any) {
+                setIsShaking(true);
+                console.log('Error:', error);
+                setResult({bool:false,status:error.toString()});
+                setTimeout(()=>setIsShaking(false),500);
+              }
+              setIsLoading(false);
+        }
+    
+        const close = () =>{
+          setOrderModal(false)
+          setIsLoading(false)
+          setResult({bool:null,status:''})
+          setName('')
+          setEmail('')
+        }
+
+        const handleHeartIconClick = () => {
+            setBookedMass((prev:any) => {
+                const isAlreadyBooked = prev.some((ticket:any) => ticket.id === data.id);
+                const updatedBookedMas = isAlreadyBooked 
+                    ? prev.filter((ticket:any) => ticket.id !== data.id) 
+                    : [...prev, data];
+    
+                if (!isAlreadyBooked) {
+                    localStorage.setItem(`timer-${data.id}`, Date.now().toString());
+                } else {
+                    localStorage.removeItem(`timer-${data.id}`);
+                }
+    
+                localStorage.setItem('bookedMas', JSON.stringify(updatedBookedMas));
+                setBookedLength(updatedBookedMas.length)
+                return updatedBookedMas;
+            });
+        }
   return (
-    <Wrapper>
+    <>
+    <Modal title="Оплата" 
+    okText={'Отправить'} 
+    loading={isLoading} 
+    confirmLoading={isLoading}
+    cancelText={'Отмена'} 
+    open={orderModal} 
+    onOk={!result.bool ? save : ()=>{}} 
+    onCancel={close}
+    destroyOnClose={true}
+  >
+    <OrderModal shake={isShaking} name={name} setName={setName} setEmail={setEmail} email={email} result={result}/>
+  </Modal>
+    <Wrapper active={bookedMas.some((ticket:any) => ticket.id === data.id)}>
         <LeftSide>
             <img
                 src='/logo.png'
                 alt='логотип компании'
-                width='120px'
+                width='180px'
             />
-            <button onClick={()=>{navigate(`/TicketPage/${data.id}?currency=${activeCurrencies}`)}}>Купить за {formatPrice(data.price)} {signs.filter((item:any,index:number)=> activeCurrencies === index+1 )}</button>
+            <button onClick={()=>setOrderModal(true)}>Купить за {formatPrice(data.price)} {signs[10]}</button>
         </LeftSide>
         <RightSide>
             <Departure>
                 <Time>{data.departure_time}</Time>
                 <Place>{data.origin},{data.origin_name}</Place>
-                <Date>{formatDate(data.departure_date)}</Date>
+                <Datee>{formatDate(data.departure_date)}</Datee>
             </Departure>
             <Center>
-                <Date>{formatStops(data.stops)}</Date>
+                <Datee>{formatStops(data.stops)}</Datee>
                 <Line>
-                    <div className='hor'></div>
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path d="M482.3 192c34.2 0 93.7 29 93.7 64c0 36-59.5 64-93.7 64l-116.6 0L265.2 495.9c-5.7 10-16.3 16.1-27.8 16.1l-56.2 0c-10.6 0-18.3-10.2-15.4-20.4l49-171.6L112 320 68.8 377.6c-3 4-7.8 6.4-12.8 6.4l-42 0c-7.8 0-14-6.3-14-14c0-1.3 .2-2.6 .5-3.9L32 256 .5 145.9c-.4-1.3-.5-2.6-.5-3.9c0-7.8 6.3-14 14-14l42 0c5 0 9.8 2.4 12.8 6.4L112 192l102.9 0-49-171.6C162.9 10.2 170.6 0 181.2 0l56.2 0c11.5 0 22.1 6.2 27.8 16.1L365.7 192l116.6 0z"/></svg>
+                    <div className='hor'/>
+                    <span>{">"}</span>
                 </Line>
             </Center>
             <Arrival>
                 <Time>{data.arrival_time}</Time>
                 <Place>{data.destination_name},{data.destination}</Place>
-                <Date>{formatDate(data.arrival_date)}</Date>
+                <Datee>{formatDate(data.arrival_date)}</Datee>
             </Arrival>
         </RightSide>
+        <div className='heart_icon' onClick={handleHeartIconClick}/>
+        {cart && timeLeft !== null && (
+                <div style={{ position: 'absolute', top: '48px', right: '10px', fontSize: '15px', color: '#f47403' }}>
+                    {`Бронь закончиться через: ${Math.floor(timeLeft / 60000)}:${Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0')}`}
+                </div>
+            )}
     </Wrapper>
+    </>
   )
 }
 

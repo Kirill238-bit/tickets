@@ -27,7 +27,7 @@ app.get('/', (req, res) => {
 
 // Get all tickets
 app.get('/api/tickets', (req, res) => {
-    const { transfers, currency, departure, arrive, date_from } = req.query;
+    const { transfers, departure, arrive, date_from } = req.query;
     let query = 'SELECT * FROM tickets';
     const params = [];
 
@@ -38,7 +38,6 @@ app.get('/api/tickets', (req, res) => {
         params.push(...transferValues);
     }
     if (departure && arrive && date_from) {
-        //const formattedDate = new Date(date_from).toISOString().split('T')[0]; // Ensure date is in YYYY-MM-DD format
         query += transfers !== undefined ? ' AND' : ' WHERE';
         query += ' LOWER(origin_name) = LOWER(?) AND LOWER(destination_name) = LOWER(?) AND departure_date = ?';
         params.push(decodeURIComponent(departure), decodeURIComponent(arrive), date_from);
@@ -50,36 +49,10 @@ app.get('/api/tickets', (req, res) => {
             return;
         }
 
-        if (currency) {
-            rows = rows.map(ticket => {
-                ticket.price = convertCurrency(ticket.price, currency);
-                return ticket;
-            });
-        }
-
         res.json({ tickets: rows });
     });
 });
 
-// Get ticket by ID
-app.get('/api/tickets/:id', (req, res) => {
-    const id = req.params.id;
-    const { currency } = req.query;
-    db.get('SELECT * FROM tickets WHERE id = ?', [id], (err, row) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-
-        if (currency) {
-            row.price = convertCurrency(row.price, currency);
-        }
-
-        res.json(row);
-    });
-});
-
-// Book a ticket
 app.post('/api/tickets/book', (req, res) => {
     const { email, ticketId,username } = req.body;
 
@@ -94,10 +67,16 @@ app.post('/api/tickets/book', (req, res) => {
         const bookTicket = (userId) => {
             db.run('INSERT INTO bookings (user_id, ticket_id) VALUES (?, ?)', [userId, ticketId], function(err) {
                 if (err) {
-                    res.status(400).json({ error: 'Этот пользователь уже забронировал этот билет' });
+                    res.status(400).json({ error: 'Этот пользователь уже купил этот билет' });
                     return;
                 }
-                res.json({ message: `Билет ${ticketId} успешно забронирован ${email}` });
+                db.run('UPDATE tickets SET available_seats = available_seats - 1 WHERE id = ?', [ticketId], function(err) {
+                    if (err) {
+                        res.status(500).json({ error: 'Ошибка обновления количества доступных мест' });
+                        return;
+                    }
+                    res.json({ message: `Билет ${ticketId} успешно забронирован ${email}` });
+                });
             });
         };
 
@@ -115,25 +94,6 @@ app.post('/api/tickets/book', (req, res) => {
     });
 });
 
-// Canceling a booking
-app.post('/api/tickets/cancel', (req, res) => {
-    const { email, ticketId } = req.body;
-
-    db.get('SELECT id FROM users WHERE email = ?', [email], (err, user) => {
-        if (err || !user) {
-            res.status(400).json({ error: 'User not found' });
-            return;
-        }
-
-        db.run('DELETE FROM bookings WHERE user_id = ? AND ticket_id = ?', [user.id, ticketId], function(err) {
-            if (err || this.changes === 0) {
-                res.status(400).json({ error: 'Booking not found or already canceled' });
-                return;
-            }
-            res.json({ message: `Booking for ticket ${ticketId} canceled successfully for user ${email}` });
-        });
-    });
-});
 
 
 // Start server
