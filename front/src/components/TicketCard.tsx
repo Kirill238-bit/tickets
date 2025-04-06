@@ -9,13 +9,15 @@ import OrderModal from './OrderModal'
 import { Modal } from 'antd'
 import { defaultPath } from 'App'
 import { Context } from './Context'
+import { FireOutlined } from '@ant-design/icons'
 
 interface IProps{
     data:ITicket,
-    cart:boolean
+    cart:boolean,
+    border?:boolean
 }
 
-const Wrapper = styled.div<{active:boolean}>`
+const Wrapper = styled.div<{active:boolean,border?:boolean}>`
     background-color: #fff;
     position: relative;
     display: flex;
@@ -24,6 +26,7 @@ const Wrapper = styled.div<{active:boolean}>`
     @media (max-width:768px) {
         flex-direction: column;
     }
+    border:${props => props.border ? '1px solid #e13a4e' : ''};
 
     .heart_icon:before{
         display: inline-block;
@@ -130,14 +133,14 @@ const Line = styled.div`
     }
 `
 
-const TicketCard:FC<IProps> = ({data,cart}) => {
+const TicketCard:FC<IProps> = ({data,cart,border}) => {
       const [orderModal,setOrderModal] = useState(false)
       const [name,setName] = useState('')
       const [email,setEmail] =useState('')
       const [result,setResult] = useState<{bool:null | boolean,status:null | string}>({bool:null,status:null})
       const [isLoading,setIsLoading] = useState(false)
       const [isShaking,setIsShaking] = useState(false)
-      const {setBookedLength,bookedMas,setBookedMass} = useContext(Context)
+      const {setBookedLength,bookedMas,setBookedMass,isAuth} = useContext(Context)
       const [timeLeft, setTimeLeft] = useState<number | null>(null);
       
       useEffect(() => {
@@ -165,10 +168,14 @@ const TicketCard:FC<IProps> = ({data,cart}) => {
 
           const save = async() => {
             setIsLoading(true)
+            if (!isAuth) return 
+
+            const parsedData = JSON.parse(localStorage.getItem('userData') || '');
+
             const body = {
-                email:email,
+                email:parsedData.email,
                 ticketId:data.id,
-                username:name
+                username:parsedData.username
             }
             try {
               if(!email || !name) throw new Error('Вы не заполнили поля')
@@ -239,10 +246,11 @@ const TicketCard:FC<IProps> = ({data,cart}) => {
     onOk={!result.bool ? save : ()=>{}} 
     onCancel={close}
     destroyOnClose={true}
+    footer={!isAuth ? null : undefined}
   >
-    <OrderModal shake={isShaking} name={name} setName={setName} setEmail={setEmail} email={email} result={result}/>
+    <OrderModal save={save} shake={isShaking} name={name} setName={setName} setEmail={setEmail} email={email} result={result}/>
   </Modal>
-    <Wrapper active={bookedMas.some((ticket:any) => ticket.id === data.id)}>
+    <Wrapper active={bookedMas.some((ticket:any) => ticket.id === data.id)} border={border}>
         <LeftSide>
             <img
                 src='/logo.png'
@@ -274,6 +282,11 @@ const TicketCard:FC<IProps> = ({data,cart}) => {
         {cart && timeLeft !== null && (
                 <div style={{ position: 'absolute', top: '48px', right: '10px', fontSize: '15px', color: '#f47403' }}>
                     {`Бронь закончиться через: ${Math.floor(timeLeft / 60000)}:${Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0')}`}
+                </div>
+            )}
+        {border &&  (
+                <div style={{ position: 'absolute', top: '18px', left: '10px' }}>
+                    <FireOutlined  style={{color : '#e13a4e',fontSize:'32px'}} />
                 </div>
             )}
     </Wrapper>

@@ -17,16 +17,22 @@ export const defaultPath = 'http://localhost:7070/api/'
 function App() {
     const [bookedLength,setBookedLength] = useState(0)
     const [bookedMas,setBookedMass] = useState<ITicket[]>([])
+    const [isAuth,setIsAuth] = useState<boolean>(false)
     
     useEffect(()=>{
         const storedBookedMas = localStorage.getItem('bookedMas');
+        const storedUserData = localStorage.getItem('userData');
+        if (storedUserData) {
+          setIsAuth(true);
+        } 
         if (storedBookedMas) {
           setBookedLength(JSON.parse(storedBookedMas).length);
           setBookedMass(JSON.parse(storedBookedMas));
         }
+
     },[])
   return (
-    <Context.Provider value={{bookedLength,setBookedLength,bookedMas,setBookedMass}}>
+    <Context.Provider value={{bookedLength,setBookedLength,bookedMas,setBookedMass,isAuth,setIsAuth}}>
     <ConfigProvider
       theme={{ token: {colorPrimary: `#f47403`} }}
       locale={{...ruRU}}

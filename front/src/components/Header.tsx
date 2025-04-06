@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import styled from 'styled-components'
 
@@ -7,6 +6,7 @@ const Wrapper = styled.div`
     justify-content: flex-end;
     border-radius: 8px;
     background-color: #dedede5b;
+    gap:16px;
     padding: 10px 5%;
     .cart_icon{
         display: inline-block;
@@ -34,6 +34,18 @@ const Wrapper = styled.div`
         transform: translate3d(12px, -5px, 0);
     }
 
+    .user_icon{
+        display: inline-block;
+        width:30px;
+        height:30px;
+    }
+    .user_icon:before{
+        display: inline-block;
+        width:30px;
+        height:30px;
+        content: url("data:image/svg+xml;charset=UTF-8,%3c?xml version='1.0' ?%3e%3csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M15.71,12.71a6,6,0,1,0-7.42,0,10,10,0,0,0-6.22,8.18,1,1,0,0,0,2,.22,8,8,0,0,1,15.9,0,1,1,0,0,0,1,.89h.11a1,1,0,0,0,.88-1.1A10,10,0,0,0,15.71,12.71ZM12,12a4,4,0,1,1,4-4A4,4,0,0,1,12,12Z' fill='%23f47403'/%3e%3c/svg%3e");
+    }
+
 ` 
 type IProps={
     bookedLength:number
@@ -42,6 +54,7 @@ const Header = ({bookedLength}:IProps) => {
     const navigate = useNavigate()
   return (
     <Wrapper>
+        <div className='user_icon' onClick={()=> navigate('/UserPage')}/>
         <div onClick={()=> navigate('/CartPage')} style={{position:'relative',cursor:'pointer'}}>
             <div className='cart_icon'/>
             {bookedLength ? <div className='number'>{bookedLength}</div> : <></>}

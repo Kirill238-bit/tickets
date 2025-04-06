@@ -16,7 +16,7 @@ const Wrapper = styled.div`
     border:5px solid #f47403;
     border-radius: 8px;
     background-color: #dedede5b;
-    margin: 0 10% 70px 10%;
+    margin: 0 10%;
 `
 const MenuSearch:FC<IProps> = ({
     departure,

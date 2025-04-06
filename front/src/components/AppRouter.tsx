@@ -1,10 +1,10 @@
 import { Route, Routes } from "react-router-dom";
 
 import React from "react";
-import TicketPage from "../pages/TicketPage";
 import ListPage from "../pages/ListPage";
 import TitlePage from "pages/TitlePage";
 import CartPage from "pages/CartPage";
+import UserPage from "pages/UserPage";
 
 
 const publicRoutes:any[]=[
@@ -19,7 +19,11 @@ const publicRoutes:any[]=[
     {
       path:'/CartPage',
       Component:<CartPage/>
-  },
+    },
+    {
+      path:'/UserPage',
+      Component:<UserPage/>
+    },
 ];
 const AppRouter=()=> {
   return (

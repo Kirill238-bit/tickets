@@ -4,6 +4,7 @@ import { Dispatch, FC, SetStateAction } from 'react';
 import styled from 'styled-components';
 import { currency, plainOptions } from '../consts/menu';
 import React from 'react';
+import HotTickets from './HotTickets';
 
 interface IProps{
     checkedList: CheckboxValueType[]
@@ -61,24 +62,24 @@ const MenuSort:FC<IProps> = ({checkedList, setCheckedList}) => {
     
 
   return (
-    <Wrapper>
-       {/*} <div>
-            <Title>Валюта</Title>
-            <Currencies>
-                {currency.map((item,index)=>{
-                    return (
-                        <Item active={Boolean(index+1 === activeCurrencies)} onClick={()=>setActiveCurrencies(index+1)}>{item}</Item>
-                )})}
-            </Currencies>
-        </div>*/}
-        <div>
-            <Title>Количество пересадок</Title>
-            <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll}>
-                Все
-            </Checkbox>
-            <CheckboxGroup options={plainOptions} value={checkedList} onChange={onChange} />
-        </div>
-    </Wrapper>
+        <Wrapper>
+           {/*} <div>
+                <Title>Валюта</Title>
+                <Currencies>
+                    {currency.map((item,index)=>{
+                        return (
+                            <Item active={Boolean(index+1 === activeCurrencies)} onClick={()=>setActiveCurrencies(index+1)}>{item}</Item>
+                    )})}
+                </Currencies>
+            </div>*/}
+            <div>
+                <Title>Количество пересадок</Title>
+                <Checkbox indeterminate={indeterminate} onChange={onCheckAllChange} checked={checkAll}>
+                    Все
+                </Checkbox>
+                <CheckboxGroup options={plainOptions} value={checkedList} onChange={onChange} />
+            </div>
+        </Wrapper>
   )
 }
 

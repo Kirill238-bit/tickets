@@ -101,4 +101,85 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/a
     exit();
 }
 
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/api/users/create') !== false) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $email = $input['email'];
+    $username = $input['username'];
+    $phoneNumber = $input['phone_number'];
+
+    try {
+        $stmt = $db->prepare('INSERT INTO users (email, username, phone_number) VALUES (?, ?, ?)');
+        $stmt->execute([$email, $username, $phoneNumber]);
+
+        // Get the last inserted ID
+        $lastId = $db->lastInsertId();
+
+        // Fetch the newly created user
+        $stmt = $db->prepare('SELECT id, email, username, phone_number FROM users WHERE id = ?');
+        $stmt->execute([$lastId]);
+        $newUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        echo json_encode(['message' => 'User created successfully', 'user' => $newUser]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+    }
+    exit();
+}
+
+// Handle PUT request for updating user information
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/api/users/update') !== false) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $userId = $input['user_id'] ?? null;
+    $email = $input['email'] ?? null;
+    $username = $input['username'] ?? null;
+    $phoneNumber = $input['phone_number'] ?? null;
+
+    if (!$userId || !is_numeric($userId)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Invalid or missing user ID']);
+        exit();
+    }
+
+    try {
+        $fields = [];
+        $params = [];
+
+        if ($email) {
+            $fields[] = 'email = ?';
+            $params[] = $email;
+        }
+        if ($username) {
+            $fields[] = 'username = ?';
+            $params[] = $username;
+        }
+        if ($phoneNumber) {
+            $fields[] = 'phone_number = ?';
+            $params[] = $phoneNumber;
+        }
+
+        if (!empty($fields)) {
+            $params[] = $userId;
+            $query = 'UPDATE users SET ' . implode(', ', $fields) . ' WHERE id = ?';
+            $stmt = $db->prepare($query);
+            $stmt->execute($params);
+
+            // Fetch the updated user data
+            $stmt = $db->prepare('SELECT id, email, username, phone_number FROM users WHERE id = ?');
+            $stmt->execute([$userId]);
+            $updatedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            echo json_encode(['message' => 'User updated successfully', 'user' => $updatedUser]);
+        } else {
+            echo json_encode(['message' => 'No fields to update']);
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
+    }
+    exit();
+}
+
+
 ?>

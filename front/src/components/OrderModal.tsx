@@ -1,6 +1,8 @@
 import { WarningOutlined } from '@ant-design/icons'
 import { Form, Input, Result } from 'antd'
+import { useContext, useEffect } from 'react';
 import styled, { css, keyframes } from 'styled-components'
+import { Context } from './Context';
 
 export const shake = keyframes`
   0% { transform: translateX(0); }
@@ -29,27 +31,29 @@ type IProps = {
         status: null | string;
     }
     shake:boolean
+    save:()=>void
 }
-const OrderModal = ({name,email,setName,setEmail,result,shake}:IProps) => {
+const OrderModal = ({name,email,setName,setEmail,result,shake,save}:IProps) => {
+    const {isAuth} = useContext(Context)
 
+    useEffect(()=>{
+        if(isAuth){
+            save()
+        }
+    },[isAuth])
     
   return (
     <Wrapper shake={shake}>
-        {!result.bool ? 
-            <>
-                <Form.Item label="Имя">
-                    <Input value={name} onChange={e=>setName(e.target.value)}/>
-                </Form.Item>
-                <Form.Item label="email">
-                    <Input value={email} onChange={e=>setEmail(e.target.value)}/>
-                </Form.Item>
-               {result.bool === false ?  <div className="error"><WarningOutlined /> {result.status?.slice(6)}</div>  : ''}
-            </>
+        {!isAuth ? 
+            <Result
+                status="warning"
+                title="Пожалуйста авторизуйтесь"
+            />
         : 
             <Result
                 status="success"
-                 title="Билет успешно забронирован!"
-                />
+                title="Билет успешно забронирован!"
+            />
         }
     </Wrapper>
   )
