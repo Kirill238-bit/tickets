@@ -62,6 +62,7 @@ app.get('/api/tickets', (req, res) => {
 });
 
 // Get ticket by ID
+/*
 app.get('/api/tickets/:id', (req, res) => {
     const id = req.params.id;
     const { currency } = req.query;
@@ -76,6 +77,41 @@ app.get('/api/tickets/:id', (req, res) => {
         }
 
         res.json(row);
+    });
+});*/
+
+app.get('/api/tickets/:id', (req, res) => {
+    const id = req.params.id;
+    const { currency } = req.query;
+    
+    db.get('SELECT * FROM tickets WHERE id = ?', [id], (err, row) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+
+        if (!row) {
+            res.status(404).json({ error: 'Ticket not found' });
+            return;
+        }
+
+        if (currency) {
+            row.price = convertCurrency(row.price, currency);
+        }
+
+        if (row.stops > 0) {
+            db.all('SELECT layover_location, layover_arrival_time FROM layovers WHERE ticket_id = ?', [id], (err, layovers) => {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+                row.layovers = layovers;
+                res.json(row);
+            });
+        } else {
+            row.layovers = [];
+            res.json(row);
+        }
     });
 });
 
