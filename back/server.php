@@ -182,4 +182,208 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/a
 }
 
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && preg_match('/\/api\/users\/(\d+)\/tickets/', $_SERVER['REQUEST_URI'], $matches)) {
+    $userId = $matches[1];
+    
+    try {
+        // Получаем только активные бронирования пользователя с информацией о билетах
+        $query = 'SELECT 
+                    t.id, 
+                    t.origin, 
+                    t.origin_name, 
+                    t.destination, 
+                    t.destination_name, 
+                    t.departure_date, 
+                    t.departure_time, 
+                    t.arrival_date, 
+                    t.arrival_time, 
+                    t.carrier, 
+                    t.stops, 
+                    t.price,
+                    t.available_seats,
+                    b.booking_date,
+                    b.id as booking_id
+                  FROM bookings b
+                  JOIN tickets t ON b.ticket_id = t.id
+                  WHERE b.user_id = ?';
+        
+        $stmt = $db->prepare($query);
+        $stmt->execute([$userId]);
+        $bookedTickets = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        echo json_encode([
+            'success' => true,
+            'tickets' => $bookedTickets
+        ]);
+    } catch (PDOException $e) {
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Database error: ' . $e->getMessage()
+        ]);
+    }
+    exit();
+}
+// Handle POST request to cancel a booking
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/api/bookings/cancel') !== false) {
+    $input = json_decode(file_get_contents('php://input'), true);
+    $bookingId = $input['booking_id'] ?? null;
+
+    if (!$bookingId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Booking ID is required']);
+        exit();
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // 1. Get booking details before deleting
+        $stmt = $db->prepare('SELECT user_id, ticket_id FROM bookings WHERE id = ?');
+        $stmt->execute([$bookingId]);
+        $booking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$booking) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Booking not found']);
+            $db->rollBack();
+            exit();
+        }
+
+        // 2. Move to cancelled_bookings table
+        $stmt = $db->prepare('
+            INSERT INTO cancelled_bookings (user_id, ticket_id, cancellation_date)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+        ');
+        $stmt->execute([$booking['user_id'], $booking['ticket_id']]);
+
+        // 3. Delete from active bookings
+        $stmt = $db->prepare('DELETE FROM bookings WHERE id = ?');
+        $stmt->execute([$bookingId]);
+
+        // 4. Increase available seats
+        $stmt = $db->prepare('
+            UPDATE tickets 
+            SET available_seats = available_seats + 1 
+            WHERE id = ? AND available_seats < total_seats
+        ');
+        $stmt->execute([$booking['ticket_id']]);
+
+        $db->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Booking cancelled successfully',
+            'ticket_id' => $booking['ticket_id']
+        ]);
+    } catch (PDOException $e) {
+        $db->rollBack();
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Database error: ' . $e->getMessage()
+        ]);
+    }
+    exit();
+}
+// Handle POST request to import single ticket from TXT file
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && strpos($_SERVER['REQUEST_URI'], '/api/tickets/import') !== false) {
+    // Проверяем наличие файла
+    if (!isset($_FILES['ticket_file'])) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Файл не загружен']);
+        exit();
+    }
+
+    $file = $_FILES['ticket_file'];
+    $userId = $_POST['user_id'] ?? null;
+
+    if (!$userId) {
+        http_response_code(400);
+        echo json_encode(['error' => 'ID пользователя обязательно']);
+        exit();
+    }
+
+    // Проверяем тип файла (только TXT)
+    if ($file['type'] !== 'text/plain') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Разрешены только TXT файлы']);
+        exit();
+    }
+
+    // Проверяем размер файла (не более 1KB)
+    if ($file['size'] > 1024) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Файл слишком большой (макс. 1KB)']);
+        exit();
+    }
+
+    // Читаем содержимое файла
+    $content = file_get_contents($file['tmp_name']);
+    $ticketId = trim($content);
+
+    // Проверяем, что файл содержит только один ID билета
+    if (!is_numeric($ticketId)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Файл должен содержать только один числовой ID билета']);
+        exit();
+    }
+
+    try {
+        $db->beginTransaction();
+
+        // 1. Проверяем существование билета
+        $stmt = $db->prepare('SELECT id, available_seats FROM tickets WHERE id = ?');
+        $stmt->execute([$ticketId]);
+        $ticket = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$ticket) {
+            http_response_code(404);
+            echo json_encode(['error' => 'Билет с ID ' . $ticketId . ' не найден']);
+            $db->rollBack();
+            exit();
+        }
+
+        // 2. Проверяем доступность мест
+        if ($ticket['available_seats'] <= 0) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Нет доступных мест для билета ' . $ticketId]);
+            $db->rollBack();
+            exit();
+        }
+
+        // 3. Проверяем, не забронирован ли уже этот билет пользователем
+        $stmt = $db->prepare('SELECT id FROM bookings WHERE user_id = ? AND ticket_id = ?');
+        $stmt->execute([$userId, $ticketId]);
+        $existingBooking = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existingBooking) {
+            http_response_code(400);
+            echo json_encode(['error' => 'Вы уже забронировали этот билет']);
+            $db->rollBack();
+            exit();
+        }
+
+        // 4. Добавляем бронирование
+        $stmt = $db->prepare('INSERT INTO bookings (user_id, ticket_id) VALUES (?, ?)');
+        $stmt->execute([$userId, $ticketId]);
+
+        // 5. Уменьшаем количество доступных мест
+        $stmt = $db->prepare('UPDATE tickets SET available_seats = available_seats - 1 WHERE id = ?');
+        $stmt->execute([$ticketId]);
+
+        $db->commit();
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Билет успешно добавлен',
+            'ticket_id' => $ticketId
+        ]);
+    } catch (PDOException $e) {
+        $db->rollBack();
+        http_response_code(500);
+        echo json_encode(['error' => 'Ошибка базы данных: ' . $e->getMessage()]);
+    }
+    exit();
+}
 ?>

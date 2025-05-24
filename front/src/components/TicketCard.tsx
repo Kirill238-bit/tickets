@@ -6,7 +6,7 @@ import { formatPrice } from '../utils/formatPrice'
 import { signs } from '../consts/menu'
 import { ITicket } from '../consts/dataType'
 import OrderModal from './OrderModal'
-import { Modal } from 'antd'
+import { message, Modal } from 'antd'
 import { defaultPath } from 'App'
 import { Context } from './Context'
 import { FireOutlined } from '@ant-design/icons'
@@ -14,7 +14,9 @@ import { FireOutlined } from '@ant-design/icons'
 interface IProps{
     data:ITicket,
     cart:boolean,
-    border?:boolean
+    border?:boolean,
+    buy?:boolean,
+    getTickets?:(user:any)=>void
 }
 
 const Wrapper = styled.div<{active:boolean,border?:boolean}>`
@@ -133,7 +135,7 @@ const Line = styled.div`
     }
 `
 
-const TicketCard:FC<IProps> = ({data,cart,border}) => {
+const TicketCard:FC<IProps> = ({data,cart,border,buy,getTickets}) => {
       const [orderModal,setOrderModal] = useState(false)
       const [name,setName] = useState('')
       const [email,setEmail] =useState('')
@@ -178,7 +180,7 @@ const TicketCard:FC<IProps> = ({data,cart,border}) => {
                 username:parsedData.username
             }
             try {
-              if(!email || !name) throw new Error('Вы не заполнили поля')
+             // if(!email || !name) return message.error('Вы не заполнили поля')
               
                 const response = await fetch(`${defaultPath}tickets/book`, {
                   method: 'POST',
@@ -217,6 +219,22 @@ const TicketCard:FC<IProps> = ({data,cart,border}) => {
           setEmail('')
         }
 
+        const cancelHandler =async () => {
+            try {
+                await fetch(`${defaultPath}bookings/cancel`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },//@ts-ignore
+                    body: JSON.stringify({"booking_id": data.booking_id}),
+                  });
+                  const parsedData = JSON.parse(localStorage.getItem('userData') || '');//@ts-ignore
+                  getTickets(parsedData)
+            }catch{
+                message.error("Произошла ошибка")
+            }
+        }
+
         const handleHeartIconClick = () => {
             setBookedMass((prev:any) => {
                 const isAlreadyBooked = prev.some((ticket:any) => ticket.id === data.id);
@@ -238,15 +256,15 @@ const TicketCard:FC<IProps> = ({data,cart,border}) => {
   return (
     <>
     <Modal title="Оплата" 
-    okText={'Отправить'} 
+    //okText={'Отправить'} 
     loading={isLoading} 
     confirmLoading={isLoading}
-    cancelText={'Отмена'} 
+    //cancelText={'Отмена'} 
     open={orderModal} 
-    onOk={!result.bool ? save : ()=>{}} 
+    //onOk={!result.bool ? save : ()=>{}} 
     onCancel={close}
     destroyOnClose={true}
-    footer={!isAuth ? null : undefined}
+    footer={null}
   >
     <OrderModal save={save} shake={isShaking} name={name} setName={setName} setEmail={setEmail} email={email} result={result}/>
   </Modal>
@@ -257,7 +275,8 @@ const TicketCard:FC<IProps> = ({data,cart,border}) => {
                 alt='логотип компании'
                 width='180px'
             />
-            <button onClick={()=>setOrderModal(true)}>Купить за {formatPrice(data.price)} {signs[10]}</button>
+            {buy !== false && <button onClick={()=>setOrderModal(true)}>Купить за {formatPrice(data.price)} {signs[10]}</button>}
+            {buy === false && <button onClick={cancelHandler}>Отменить</button>}
         </LeftSide>
         <RightSide>
             <Departure>
@@ -278,7 +297,7 @@ const TicketCard:FC<IProps> = ({data,cart,border}) => {
                 <Datee>{formatDate(data.arrival_date)}</Datee>
             </Arrival>
         </RightSide>
-        <div className='heart_icon' onClick={handleHeartIconClick}/>
+        {buy !== false && <div className='heart_icon' onClick={handleHeartIconClick}/>}
         {cart && timeLeft !== null && (
                 <div style={{ position: 'absolute', top: '48px', right: '10px', fontSize: '15px', color: '#f47403' }}>
                     {`Бронь закончиться через: ${Math.floor(timeLeft / 60000)}:${Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0')}`}
