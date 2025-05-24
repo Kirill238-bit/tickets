@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import React from "react";
 import TicketPage from "../pages/TicketPage";
 import ListPage from "../pages/ListPage";
+import CancelPage from "pages/CancelPage";
 
 
 const publicRoutes:any[]=[
@@ -14,6 +15,10 @@ const publicRoutes:any[]=[
         path:'/TicketPage/:id',
         Component: <TicketPage/>
     },
+    {
+      path:'/CancelPage/:id',
+      Component: <CancelPage/>
+  },
 ];
 const AppRouter=()=> {
   return (

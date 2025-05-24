@@ -48,8 +48,8 @@ const OrderModal = ({name,email,setName,setEmail,result,shake}:IProps) => {
         : 
             <Result
                 status="success"
-                 title="Билет успешно забронирован!"
-                />
+                title="Билет успешно забронирован!"
+            />
         }
     </Wrapper>
   )

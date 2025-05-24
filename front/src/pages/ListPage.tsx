@@ -10,6 +10,7 @@ const Wrapper = styled.div`
   display: flex;
   flex-direction: column;
   padding-top: 2%;
+  height:100%;
   background-color: #dedede5b;
   h1{
     font-size: 44px;

@@ -3,14 +3,15 @@ import TicketCard from './TicketCard';
 import styled from 'styled-components';//@ts-ignore
 import { CheckboxValueType } from 'antd/es/checkbox/Group';
 import { ITicket } from '../consts/dataType';
-import React from 'react';
 import { defaultPath } from '../App';
 
 const Wrapper = styled.div`
       display: flex;
       flex-direction: column;
       gap:18px;
-      height:80vh;
+      height:76vh;
+      border-radius: 20px;
+      margin-bottom: 30px;
       overflow: auto;
       @media (max-width:768px) {
         padding: 0 16px 16px 16px;

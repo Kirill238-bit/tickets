@@ -1,5 +1,5 @@
-import { InfoCircleOutlined, WarningOutlined } from '@ant-design/icons';
-import { Modal } from 'antd';
+import { CheckCircleOutlined, CloseCircleOutlined, InfoCircleOutlined, WarningOutlined } from '@ant-design/icons';
+import { Alert, Modal } from 'antd';
 import { defaultPath } from 'App';
 import OrderModal from 'components/OrderModal';
 import { ITicket } from 'consts/dataType';
@@ -115,6 +115,22 @@ const CardWrapper = styled.div`
  .item:nth-child(2):after{
     top: -12px;
  }
+ .item_layover{
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 30px;
+ }
+ .item_layover:after{
+    background-color: #cdd4de;
+    content: "";
+    height: 100%;
+    left: -14px;
+    position: absolute;
+    top: 0;
+    width: 2px;
+ }
 `
 
 const TicketPage = () => {
@@ -162,6 +178,7 @@ const TicketPage = () => {
         
             await response.json();
             setResult({bool:true,status:''});
+            generateTicketFile(data, data.id, params.get('currency'));
             setTimeout(()=>{
               setResult({bool:null,status:''});
               setOrderModal(false);
@@ -174,6 +191,39 @@ const TicketPage = () => {
           }
           setIsLoading(false);
     }
+
+    const generateTicketFile = (ticketData: ITicket, ticketId: string, currency: string | null) => {
+      // Формируем содержимое файла
+      const content = `
+    БИЛЕТ НА САМОЛЕТ
+    -------------------------------
+    МАРШРУТ: ${ticketData.origin_name} → ${ticketData.destination_name}
+    ДАТА ВЫЛЕТА: ${formatDate(ticketData.departure_date)} в ${ticketData.departure_time}
+    ДАТА ПРИЛЕТА: ${formatDate(ticketData.arrival_date)} в ${ticketData.arrival_time}
+    АВИАКОМПАНИЯ: ${ticketData.carrier}
+    ТАРИФ: ${ticketData.stops ? 'Дeшевый' : 'Дорогой'}
+    СТОИМОСТЬ: ${ticketData.price} ${signs.find((item, index) => Number(currency) === index + 1) || '₽'}
+    
+    ИНФОРМАЦИЯ О ПЕРЕСАДКАХ:
+    ${//@ts-ignore
+      ticketData.layovers?.map(l => `- ${l.layover_location} (прибытие в ${l.layover_arrival_time})`).join('\n') || 'Без пересадок'}
+    -------------------------------
+    Ссылка для управления бронированием:
+    http://localhost:3000/CancelPage/${ticketId}
+    
+    Для возврата билета перейдите по ссылке.
+      `;
+    
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Билет_${ticketData.origin_name}_${ticketData.destination_name}_${ticketData.departure_date}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
 
     const close = () =>{
       setOrderModal(false)
@@ -200,8 +250,23 @@ const TicketPage = () => {
       </Modal>
       <Left>
         <CardWrapper>
-          <h2>{data.stops ? 'Дёшевый тариф' : 'Дорогой тариф'}</h2>
-          Количеств пересадок: {data.stops}
+          <h2>{data.stops ? 'Дeшевый тариф' : 'Дорогой тариф'}</h2>
+          <p>Количеств пересадок: {data.stops}</p>
+          {data.stops ? 
+            <>
+            <p><CheckCircleOutlined style={{color : '#6ecc61'}}/> Ручная кладь 1×8 кг</p>
+            <p><CloseCircleOutlined /> Без багажа</p>
+            <p><CloseCircleOutlined /> Без обмена</p>
+            <p><CloseCircleOutlined /> Без возврата</p>
+            </>
+            :
+            <>
+            <p><CheckCircleOutlined style={{color : '#6ecc61'}}/> Ручная кладь 1×8 кг</p>
+            <p><CheckCircleOutlined style={{color : '#6ecc61'}}/> Багаж 1×20 кг</p>
+            <p><CheckCircleOutlined style={{color : '#6ecc61'}}/> Обмен платный</p>
+            <p><CheckCircleOutlined style={{color : '#6ecc61'}}/> Возврат платный</p>
+            </>
+          }
         </CardWrapper>
         <br/><br/>
         {data.stops ? 
@@ -218,22 +283,48 @@ const TicketPage = () => {
         </>
         }
         <h2>{data.origin_name} - {data.destination_name}</h2>
+        {data.stops ? 
+          <CardWrapper>
+            <div className='item'>
+              <div style={{marginRight:'30px'}}>
+                <Time>{data.departure_time}</Time>
+                <Date>{formatDate(data.departure_date)}</Date>
+              </div>
+              <Place>{data.origin_name}</Place>
+            </div>
+            <div className='item_layover' style={{display:'flex',flexDirection:'column',gap:'8px', marginLeft:'30px'}}>
+            {/* @ts-ignore */}
+            {data.layovers.map((item)=>
+                <Alert message={`Смена аэропорта в ${item.layover_location} в
+                ${item.layover_arrival_time}`} type="info" />
+            )}
+            </div>
+            <div className='item'>
+              <div style={{marginRight:'30px'}}>
+                <Time>{data.arrival_time}</Time>
+                <Date>{formatDate(data.arrival_date)}</Date>
+              </div>
+              <Place>{data.destination_name}</Place>
+            </div>
+          </CardWrapper>
+        :
         <CardWrapper>
-          <div className='item'>
-            <div style={{marginRight:'30px'}}>
-              <Time>{data.departure_time}</Time>
-              <Date>{formatDate(data.departure_date)}</Date>
-            </div>
-            <Place>{data.origin_name}</Place>
+        <div className='item'>
+          <div style={{marginRight:'30px'}}>
+            <Time>{data.departure_time}</Time>
+            <Date>{formatDate(data.departure_date)}</Date>
           </div>
-          <div className='item'>
-            <div style={{marginRight:'30px'}}>
-              <Time>{data.arrival_time}</Time>
-              <Date>{formatDate(data.arrival_date)}</Date>
-            </div>
-            <Place>{data.destination_name}</Place>
+          <Place>{data.origin_name}</Place>
+        </div>
+        <div className='item'>
+          <div style={{marginRight:'30px'}}>
+            <Time>{data.arrival_time}</Time>
+            <Date>{formatDate(data.arrival_date)}</Date>
           </div>
-        </CardWrapper>
+          <Place>{data.destination_name}</Place>
+        </div>
+      </CardWrapper>
+        }
       </Left>
       <Right>
         <h3>{data.price} {signs.filter((item:any,index:number)=> Number(params.get('currency')) === index+1 )}</h3>

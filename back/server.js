@@ -61,24 +61,6 @@ app.get('/api/tickets', (req, res) => {
     });
 });
 
-// Get ticket by ID
-/*
-app.get('/api/tickets/:id', (req, res) => {
-    const id = req.params.id;
-    const { currency } = req.query;
-    db.get('SELECT * FROM tickets WHERE id = ?', [id], (err, row) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-
-        if (currency) {
-            row.price = convertCurrency(row.price, currency);
-        }
-
-        res.json(row);
-    });
-});*/
 
 app.get('/api/tickets/:id', (req, res) => {
     const id = req.params.id;
